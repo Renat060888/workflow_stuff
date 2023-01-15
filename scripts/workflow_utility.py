@@ -29,6 +29,9 @@ class TerminalColors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+# ----------------------------------------------------------------------------------------------------------------------
+# supporting functional
+# ----------------------------------------------------------------------------------------------------------------------
 def PrintWarning(msg: str):
     print(TerminalColors.WARNING + TerminalColors.BOLD + msg + TerminalColors.ENDC)
 
@@ -113,6 +116,17 @@ def ChooseBranch(branch_name_prefix: str) -> str:
         os.system('clear')
         return out_lines[g_option_idx][2:]
 
+def PrintStatusWithHighlightedBranch(status_output: str):
+    for line in status_output.splitlines():
+                        if line.find("On branch") != -1:
+                            print(line[:10], end = '')
+                            print("{}{}{}".format(TerminalColors.OKGREEN + TerminalColors.BOLD, line[10:], TerminalColors.ENDC))
+                        else:
+                            print(line)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# main functional
+# ----------------------------------------------------------------------------------------------------------------------
 def SwitchToBranch(args: list):
     # rebuild boost ? (check commit hashes before switching main branch)
 
@@ -197,14 +211,6 @@ def PrintInfo():
     stdout = RunGit(["log", "-n", "10", "--oneline", "--decorate=short"])
     if stdout != None:
         print(stdout)
-
-def PrintStatusWithHighlightedBranch(status_output: str):
-    for line in status_output.splitlines():
-                        if line.find("On branch") != -1:
-                            print(line[:10], end = '')
-                            print("{}{}{}".format(TerminalColors.OKGREEN + TerminalColors.BOLD, line[10:], TerminalColors.ENDC))
-                        else:
-                            print(line)
 
 def PrintStatus(args: list):
     # simple output of current repo
@@ -317,7 +323,7 @@ def CommitChanges(args: list):
         for i in range(len(args) - 2):
             commit_message = commit_message + " " + args[i+2]
     else:
-        PrintError("'TRAFFIC-xxxxx' is not found in branch name, exit")
+        PrintError("'TRAFFIC-xxxxx' prefix is not found in branch name, exit")
         return
 
     # commit
@@ -348,15 +354,13 @@ def FullRebuild():
 
 def SquachCommits(args: list):
     if len(args) < 4:
-        print("too few arguments for commits squashing")
+        PrintError("too few arguments for commits squashing")
         return
 
     commits_count_to_squash: int = int(args[2]) # TODO: hint is just a recomendation ?
     if commits_count_to_squash < 2:
-        print("commits for squash must be greater than 1, exit")
+        PrintError("commits for squash must be greater than 1, exit")
         return
-
-    print("TODO: squash commits")
 
     # get ticket prefix from branch name
     stdout = RunGit(["branch", "--show-current"])
@@ -367,34 +371,35 @@ def SquachCommits(args: list):
     compiled_regexp = re.compile("^(TRAFFIC-[0-9]{1,5}).*")
     match = compiled_regexp.match(branch_name)
     if None == match:
-        print("'traffic' name is not found in branch, exit")
+        PrintError("'TRAFFIC-xxxxx' prefix is not found in branch name, exit")
         return
-    print("ticket name of branch: {}".format(match.group(1)))
 
-    # check this prefix of all N commits
-    ticket_in_commit_msg: str = "[" + match.group(1) + "]"
+    # check presense of this prefix in all N commits
+    ticket_number: str = "[" + match.group(1) + "]"
     commits_to_log: int = commits_count_to_squash + 1
     git_log_cmd: list = ["log", "-n", str(commits_to_log), "--oneline"]
     stdout = RunGit(git_log_cmd)
 
     commits_with_this_ticket_num: int = 0
     for line in stdout.splitlines():
-        if line.find(ticket_in_commit_msg) != -1:
+        if line.find(ticket_number) != -1:
             commits_with_this_ticket_num = commits_with_this_ticket_num + 1
-    print("\ncommits with this ticket number found: {}\n".format(commits_with_this_ticket_num))
-
-    print(stdout)
 
     if commits_count_to_squash != commits_with_this_ticket_num:
-        print("number of requested and found commits don't match, exit")
+        PrintError("number of requested and found commits don't match, exit")
         return
 
-    # git_reset_cmd: list = ["reset", "--soft", "HEAD~3"]
-    # stdout = RunGit(git_reset_cmd)
-    # print(stdout)
-    # git_commit_cmd: list = ["commit", "-m", args[3]]
-    # stdout = RunGit(git_commit_cmd)
-    # print(stdout)
+    print("> try to squash {} commits, current log:".format(commits_count_to_squash))
+    print(stdout)
+
+    stdout = RunGit(["reset", "--soft", "HEAD~" + str(commits_count_to_squash)])
+    if stdout != None:
+        print(stdout)
+
+    print("> save all resetted commits as one")
+    stdout = RunGit(["commit", "-m", args[3]])
+    if stdout != None:
+        print(stdout)
 
 def PrintHelp():
     print("sw - [BRANCH_NAME] switch to another branch in all repos")
@@ -409,7 +414,9 @@ def PrintHelp():
     print("rb - completely remove build directory and build project again")
     print("sq - [COMMITS_COUNT] [COMMIT_MSG] squash commits")
 
+# ----------------------------------------------------------------------------------------------------------------------
 # entry point
+# ----------------------------------------------------------------------------------------------------------------------
 def main():
     if len(sys.argv) < 2:
         PrintError("too few args, print 'hp' for help, exit")
