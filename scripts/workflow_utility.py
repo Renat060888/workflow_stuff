@@ -43,8 +43,8 @@ def RunGit(git_flags: list, print_err_msg: bool = True) -> str :
     exit_code: int = process.returncode
     if exit_code != 0:
         if print_err_msg:
-            PrintError("error occured while executing '{}', reason: {}".format(proc_args, stderr))
-            print("stdout while error: {}".format(stdout))
+            PrintError("> error occured while executing '{}', reason: {}".format(proc_args, stderr))
+            print("> stdout while error: {}".format(stdout))
         return None
 
     return stderr + stdout
@@ -55,10 +55,10 @@ def RunClangFormat(file_to_format: list):
 
     stdout, stderr = process.communicate()
     if len(stderr) != 0:
-        PrintError("error occured while executing '{}', reason: {}".format(proc_args, stderr))
+        PrintError("> error occured while executing '{}', reason: {}".format(proc_args, stderr))
 
     if len(stdout) != 0:
-        print("output of clang-format: {}".format(proc_args, stdout))
+        print("> output of clang-format: {}".format(proc_args, stdout))
 
 g_option_idx: int = 0
 g_option_chosen: bool = False
@@ -89,7 +89,7 @@ def ChooseBranch(branch_name_prefix: str) -> str:
 
         while True:    
             os.system('clear')
-            print("choose branch:")
+            print("> choose branch:")
 
             # add underscore to current option
             for idx in range(0, len(out_lines)):
@@ -164,21 +164,28 @@ def SwitchToBranch(args: list):
             print(stdout)
 
 def UpdateCurrentRepo():
-    print("> workflow-utility: update from remote...")
-    # stdout = RunGit(["remote", "update", "origin", "--prune"])
-    # if None == stdout:
-        # return
-    # print(stdout)
+    print("> update from remote")
+    stdout = RunGit(["remote", "update", "origin", "--prune"])
+    if stdout != None:
+        print(stdout)
+    else:
+        return
 
-    # TODO: pull only if it's neccessary ('can be fast-forwarded')
-    print("> workflow-utility: rollout changes on workspace...")
-    # stdout = RunGit(["pull", "--rebase", "origin"])
-    # print(stdout)
+    # pull changes only they exists
+    stdout = RunGit(["status"])
+    if stdout.find("can be fast-forwarded") != -1:
+        print("> apply changes to workdir")
+        stdout = RunGit(["pull", "--rebase", "origin"])
+        if stdout != None:
+            print(stdout)
 
-    # TODO: if root repo
-    print("> workflow-utility: update submodules...")
-    # stdout = RunGit(["submodule", "update", "--recursive"])
-    # print(stdout)
+    # update submodules only if it is a super-project
+    stdout = RunGit(["rev-parse", "--show-superproject-working-tree"])
+    if len(stdout) == 0:
+        print("> update submodules")
+        stdout = RunGit(["submodule", "update", "--recursive"])
+        if stdout != None:
+            print(stdout)
 
 def PrintInfo():    
     stdout = RunGit(["remote", "-v"])
