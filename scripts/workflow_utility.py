@@ -40,11 +40,14 @@ def RunGit(git_flags: list, print_err_msg: bool = True) -> str :
     process: subprocess.Popen = subprocess.Popen(proc_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     stdout, stderr = process.communicate()
-    if len(stderr) != 0 and print_err_msg:
-        PrintError("error occured while executing '{}', reason: {}".format(proc_args, stderr))
+    exit_code: int = process.returncode
+    if exit_code != 0:
+        if print_err_msg:
+            PrintError("error occured while executing '{}', reason: {}".format(proc_args, stderr))
+            print("stdout while error: {}".format(stdout))
         return None
 
-    return stdout
+    return stderr + stdout
 
 def RunClangFormat(file_to_format: list):
     proc_args: list = ["clang-format", "--style=file", "-i", "-Werror", file_to_format]
@@ -79,7 +82,7 @@ def ChooseBranch(branch_name_prefix: str) -> str:
         
     out_lines: list = stdout.splitlines()
     if len(out_lines) == 1:
-        return out_lines[0]
+        return out_lines[0][2:]
     elif len(out_lines) > 1:
         global g_option_idx
         global g_option_chosen
@@ -111,22 +114,52 @@ def ChooseBranch(branch_name_prefix: str) -> str:
         return out_lines[g_option_idx][2:]
 
 def SwitchToBranch(args: list):
-    # switch main branch and run submodules update
-    # traverse through all (? or from list, e.g. cr,ctx,software,ts...) repos in current workspace and try to switch to branch
     # rebuild boost ? (check commit hashes before switching main branch)
-    # print success switches
 
+    # is this super-project or sub-project
+    is_superproject: bool = False
     stdout = RunGit(["rev-parse", "--show-superproject-working-tree"])
-    # this is superproject
     if stdout != None and len(stdout) == 0:
-        branch_name:str = ChooseBranch(args[2])
-        print("chosen branch: {}".format(branch_name))
-    # this is some subproject (just switch one branch)
-    elif stdout != None:
-        branch_name:str = ChooseBranch(args[2])
-        print("chosen branch: {}".format(branch_name))
+        is_superproject = True
+
+    # super-project: switch it and all sub-projects
+    if is_superproject:
+        stdout = RunGit(["rev-parse", "--show-toplevel"])
+        root_project_top: str = stdout[:-1]
+        toplevel_basename = os.path.basename(stdout)[:-1]
+        os.chdir(root_project_top)
+
+        branch_name: str = ChooseBranch(args[2])
+
+        print("{}[{}]{}".format(TerminalColors.OKCYAN + TerminalColors.BOLD, toplevel_basename, TerminalColors.ENDC))
+        stdout = RunGit(["checkout", branch_name])
+        if stdout != None:
+            print(stdout)
+
+        # 1st step: switch to default dependent subs
+        stdout = RunGit(["submodule", "update", "--recursive"])
+        if stdout != None:
+            print(stdout)
+        
+        # main branches is controls by RBMP
+        if branch_name == "develop" or branch_name == "master":
+            return
+
+        # 2nd step: try to switch to target branch if it exists
+        for submodule in SUBMODULE_LIBS:
+            os.chdir(root_project_top + "/libraries/" + submodule)
+            stdout = RunGit(["checkout", branch_name], False)
+            if stdout != None:
+                print("{}[{}]{}".format(TerminalColors.WARNING + TerminalColors.BOLD, submodule, TerminalColors.ENDC))
+                print(stdout)
+
+    # sub-project: just switch one branch
     else:
-        pass
+        branch_name: str = ChooseBranch(args[2])
+
+        stdout = RunGit(["checkout", branch_name])
+        if stdout != None:
+            print(stdout)
 
 def UpdateCurrentRepo():
     print("> workflow-utility: update from remote...")
