@@ -147,11 +147,13 @@ def SwitchToBranch(args: list):
 
         # 2nd step: try to switch to target branch if it exists
         for submodule in SUBMODULE_LIBS:
-            os.chdir(root_project_top + "/libraries/" + submodule)
-            stdout = RunGit(["checkout", branch_name], False)
-            if stdout != None:
-                print("{}[{}]{}".format(TerminalColors.WARNING + TerminalColors.BOLD, submodule, TerminalColors.ENDC))
-                print(stdout)
+            submodule_dir: str = root_project_top + "/libraries/" + submodule
+            if os.path.exists(submodule_dir):
+                os.chdir(submodule_dir)
+                stdout = RunGit(["checkout", branch_name], False)
+                if stdout != None:
+                    print("{}[{}]{}".format(TerminalColors.WARNING + TerminalColors.BOLD, submodule, TerminalColors.ENDC))
+                    print(stdout)
 
     # sub-project: just switch one branch
     else:
@@ -212,7 +214,7 @@ def PrintStatus(args: list):
             toplevel_basename = os.path.basename(stdout)[:-1]
 
             # root project
-            print("superproject {}[{}]{} status:".format(TerminalColors.OKCYAN + TerminalColors.BOLD, toplevel_basename, TerminalColors.ENDC))
+            print("{}[{}]{}".format(TerminalColors.OKCYAN + TerminalColors.BOLD, toplevel_basename, TerminalColors.ENDC))
             stdout = RunGit(["status"])
             if stdout != None:
                 PrintStatusWithHighlightedBranch(stdout)
@@ -223,12 +225,14 @@ def PrintStatus(args: list):
             os.chdir(root_project_top)
 
             for submodule_name in SUBMODULE_LIBS:
-                os.chdir(root_project_top + "/libraries/" + submodule_name)
-                print("submodule {}[{}]{} status:".format(TerminalColors.WARNING + TerminalColors.BOLD, submodule_name, TerminalColors.ENDC))
-                stdout = RunGit(["status"])
-                if stdout != None:
-                    PrintStatusWithHighlightedBranch(stdout)
-                    print()
+                submodule_dir: str = root_project_top + "/libraries/" + submodule_name
+                if os.path.exists(submodule_dir):
+                    os.chdir(submodule_dir)
+                    print("{}[{}]{}".format(TerminalColors.WARNING + TerminalColors.BOLD, submodule_name, TerminalColors.ENDC))
+                    stdout = RunGit(["status"])
+                    if stdout != None:
+                        PrintStatusWithHighlightedBranch(stdout)
+                        print()
         # this is some subproject
         elif stdout != None:
             stdout = RunGit(["status"])
