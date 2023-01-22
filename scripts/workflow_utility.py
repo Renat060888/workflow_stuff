@@ -90,6 +90,8 @@ def ChooseBranch(branch_name_prefix: str) -> str:
         global g_option_idx
         global g_option_chosen
 
+        out_lines.append("  <exit>")
+
         while True:    
             os.system('clear')
             print("> choose branch:")
@@ -114,7 +116,11 @@ def ChooseBranch(branch_name_prefix: str) -> str:
                 g_option_idx = len(out_lines) - 1
 
         os.system('clear')
-        return out_lines[g_option_idx][2:]
+        chosen_options: str = out_lines[g_option_idx][2:]
+        if chosen_options != "<exit>":
+            return chosen_options
+        else:
+            return None
 
 def PrintStatusWithHighlightedBranch(status_output: str):
     for line in status_output.splitlines():
@@ -144,16 +150,51 @@ def SwitchToBranch(args: list):
         os.chdir(root_project_top)
 
         branch_name: str = ChooseBranch(args[2])
+        if branch_name == None:
+            return
 
         print("{}[{}]{}".format(TerminalColors.OKCYAN + TerminalColors.BOLD, toplevel_basename, TerminalColors.ENDC))
         stdout = RunGit(["checkout", branch_name])
         if stdout != None:
             print(stdout)
 
+        # check boost commit hashes before...        
+        compiled_regexp = re.compile("^HEAD detached at ([a-f0-9]*)")
+        os.chdir("libraries/boost")
+
+        stdout = RunGit(["status"])
+        if stdout != None:
+            for line in stdout.splitlines():
+                match = compiled_regexp.match(line)
+                if match != None:
+                    boost_commit_hash_before: str = match.group(1)
+                    break
+        os.chdir(root_project_top)
+
         # 1st step: switch to default dependent subs
+        print("> update submodules")
         stdout = RunGit(["submodule", "update", "--recursive"])
         if stdout != None:
             print(stdout)
+
+        # ...and after update (because it builds separately)
+        os.chdir("libraries/boost")
+        stdout = RunGit(["status"])
+        if stdout != None:
+            for line in stdout.splitlines():
+                match = compiled_regexp.match(line)
+                if match != None:
+                    boost_commit_hash_after: str = match.group(1)
+                    break
+        os.chdir(root_project_top)
+
+        if len(boost_commit_hash_before) != 0 and len(boost_commit_hash_after) != 0:
+            if boost_commit_hash_before != boost_commit_hash_after:
+                print("> boost commit hashes differ (before {} - after {}), so rebuild it (TODO)".format(boost_commit_hash_before, boost_commit_hash_after))
+                print()
+        else:
+            PrintError("> boost commit hashes before or after is not found, cannot check for rebuild")
+            print()
         
         # main branches is controls by RBMP
         if branch_name == "develop" or branch_name == "master":
@@ -172,6 +213,8 @@ def SwitchToBranch(args: list):
     # sub-project: just switch one branch
     else:
         branch_name: str = ChooseBranch(args[2])
+        if branch_name == None:
+            return
 
         stdout = RunGit(["checkout", branch_name])
         if stdout != None:
@@ -193,7 +236,7 @@ def UpdateCurrentRepo():
         if stdout != None:
             print(stdout)
 
-    # update submodules only if it is a super-project
+    # update submodules only if it's a super-project
     stdout = RunGit(["rev-parse", "--show-superproject-working-tree"])
     if len(stdout) == 0:
         print("> update submodules")
@@ -292,7 +335,7 @@ def ApplyClangFormat():
         print("nothing to format, exit")
         return
 
-    # if superproject exists - go to it and jump to clang-format dir
+    # if superproject exists - go to it and then jump to clang-format dir
     if not is_superproject:
         os.chdir(superproject_dir)
 
@@ -359,7 +402,7 @@ def SquachCommits(args: list):
 
     commits_count_to_squash: int = int(args[2]) # TODO: hint is just a recomendation ?
     if commits_count_to_squash < 2:
-        PrintError("commits for squash must be greater than 1, exit")
+        PrintError("nothing to squash, commits count must be greater than 1, exit")
         return
 
     # get ticket prefix from branch name
@@ -373,9 +416,9 @@ def SquachCommits(args: list):
     if None == match:
         PrintError("'TRAFFIC-xxxxx' prefix is not found in branch name, exit")
         return
-
-    # check presense of this prefix in all N commits
     ticket_number: str = "[" + match.group(1) + "]"
+
+    # check presense of this prefix in all N commits (in order to prevent from squashing commits, which is not related to this ticket)
     commits_to_log: int = commits_count_to_squash + 1
     git_log_cmd: list = ["log", "-n", str(commits_to_log), "--oneline"]
     stdout = RunGit(git_log_cmd)
@@ -397,7 +440,7 @@ def SquachCommits(args: list):
         print(stdout)
 
     print("> save all resetted commits as one")
-    stdout = RunGit(["commit", "-m", args[3]])
+    stdout = RunGit(["commit", "-m", ticket_number + " " + args[3]])
     if stdout != None:
         print(stdout)
 
@@ -445,7 +488,7 @@ def main():
     elif "hp" == sys.argv[1]:
         PrintHelp()
     else:
-        PrintError("unknown argument, print 'hp' for help, exit")
+        PrintError("unknown command, print 'hp' for help, exit")
         sys.exit(1)
 
 if __name__ == "__main__":
