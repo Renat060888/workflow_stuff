@@ -323,7 +323,7 @@ def ApplyClangFormat():
 
     # collect modified files
     stdout = RunGit(["status"])
-    compiled_regexp = re.compile("\tmodified:[ ]*(.*\.[hcp]+)")
+    compiled_regexp = re.compile("\t(?:modified|new file):[ ]*(.*\.(?:h|cpp|c))")
 
     modified_files_relative_to_repo: list = []
     for line in stdout.splitlines():
