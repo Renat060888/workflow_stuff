@@ -428,8 +428,8 @@ def SquachCommits(args: list):
         if line.find(ticket_number) != -1:
             commits_with_this_ticket_num = commits_with_this_ticket_num + 1
 
-    if commits_count_to_squash != commits_with_this_ticket_num:
-        PrintError("number of requested and found commits don't match, exit")
+    if commits_count_to_squash > commits_with_this_ticket_num:
+        PrintError("number of requested commits more than found, exit")
         return
 
     print("> try to squash {} commits, current log:".format(commits_count_to_squash))
