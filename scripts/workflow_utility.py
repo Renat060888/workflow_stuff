@@ -80,7 +80,7 @@ def OnRelease(key):
     return False
 
 def ChooseBranch(branch_name_prefix: str) -> str:
-    stdout = RunGit(["branch", "--list", branch_name_prefix + "*"])
+    stdout = RunGit(["branch", "--list", "--all", "*" + branch_name_prefix + "*"])
     assert(stdout != None)
         
     out_lines: list = stdout.splitlines()
@@ -158,18 +158,21 @@ def SwitchToBranch(args: list):
         if stdout != None:
             print(stdout)
 
-        # check boost commit hashes before...        
-        compiled_regexp = re.compile("^HEAD detached at ([a-f0-9]*)")
-        os.chdir("libraries/boost")
+        # TODO: remove 'remotes/origin/' from branch name
 
-        stdout = RunGit(["status"])
-        if stdout != None:
-            for line in stdout.splitlines():
-                match = compiled_regexp.match(line)
-                if match != None:
-                    boost_commit_hash_before: str = match.group(1)
-                    break
-        os.chdir(root_project_top)
+        # check boost commit hashes before...
+        if os.path.exists(root_project_top + "libraries/boost"):
+            compiled_regexp = re.compile("^HEAD detached at ([a-f0-9]*)")
+            os.chdir("libraries/boost")
+
+            stdout = RunGit(["status"])
+            if stdout != None:
+                for line in stdout.splitlines():
+                    match = compiled_regexp.match(line)
+                    if match != None:
+                        boost_commit_hash_before: str = match.group(1)
+                        break
+            os.chdir(root_project_top)
 
         # 1st step: switch to default dependent subs
         print("> update submodules")
@@ -178,23 +181,24 @@ def SwitchToBranch(args: list):
             print(stdout)
 
         # ...and after update (because it builds separately)
-        os.chdir("libraries/boost")
-        stdout = RunGit(["status"])
-        if stdout != None:
-            for line in stdout.splitlines():
-                match = compiled_regexp.match(line)
-                if match != None:
-                    boost_commit_hash_after: str = match.group(1)
-                    break
-        os.chdir(root_project_top)
+        if os.path.exists(root_project_top + "libraries/boost"):
+            os.chdir("libraries/boost")
+            stdout = RunGit(["status"])
+            if stdout != None:
+                for line in stdout.splitlines():
+                    match = compiled_regexp.match(line)
+                    if match != None:
+                        boost_commit_hash_after: str = match.group(1)
+                        break
+            os.chdir(root_project_top)
 
-        if len(boost_commit_hash_before) != 0 and len(boost_commit_hash_after) != 0:
-            if boost_commit_hash_before != boost_commit_hash_after:
-                print("> boost commit hashes differ (before {} - after {}), so rebuild it (TODO)".format(boost_commit_hash_before, boost_commit_hash_after))
+            if len(boost_commit_hash_before) != 0 and len(boost_commit_hash_after) != 0:
+                if boost_commit_hash_before != boost_commit_hash_after:
+                    print("> boost commit hashes differ (before {} - after {}), so rebuild it (TODO)".format(boost_commit_hash_before, boost_commit_hash_after))
+                    print()
+            else:
+                PrintError("> boost commit hashes before or after is not found, cannot check for rebuild")
                 print()
-        else:
-            PrintError("> boost commit hashes before or after is not found, cannot check for rebuild")
-            print()
         
         # main branches is controls by RBMP
         if branch_name == "develop" or branch_name == "master":
