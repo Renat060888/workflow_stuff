@@ -14,7 +14,8 @@ SUBMODULE_LIBS: list = [
     "thirdparty",
     "traffic-software",
     "traffic-thirdparty",
-    "navi-schema-registry"]
+    "navi-schema-registry",
+    "map_matching"]
 
 condition = threading.Condition()
 
@@ -327,7 +328,7 @@ def ApplyClangFormat():
 
     # collect modified files
     stdout = RunGit(["status"])
-    compiled_regexp = re.compile("\t(?:modified|new file):[ ]*(.*\.(?:h|cpp|c))")
+    compiled_regexp = re.compile("\t(?:modified|new file):[ ]*(.*\.(?:h|cpp|c|inl))")
 
     modified_files_relative_to_repo: list = []
     for line in stdout.splitlines():
