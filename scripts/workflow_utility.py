@@ -449,6 +449,43 @@ def SquachCommits(args: list):
     if stdout != None:
         print(stdout)
 
+def ConvertAddressType(args: list):
+    if len(args) < 3:
+        PrintError("too few arguments for commits squashing")
+        return
+    
+    stdout = RunGit(["remote", "-v"])
+    if None == stdout:
+        return
+
+    first_line: str = stdout.splitlines()[0]
+
+    if "hs" == args[2]:
+        compiled_regexp = re.compile("^origin\thttps:\/\/(.*\.git) \((fetch|push)\)$")
+        match = compiled_regexp.match(first_line)
+        if None == match:
+            PrintError("https git address prefix is not found in remote name, exit")
+            return
+
+        ssh_version: str = "git+ssh://git@" + match.group(1)
+
+        stdout = RunGit(["remote", "set-url", "origin", ssh_version])
+        print("git remote address has been successfully converted from HTTPS to SSH type")
+
+    elif "sh" == args[2]:        
+        compiled_regexp = re.compile("^origin\tgit\+ssh:\/\/git@(.*\.git) \((fetch|push)\)$")
+        match = compiled_regexp.match(first_line)
+        if None == match:
+            PrintError("ssh git address prefix is not found in remote name, exit")
+            return
+
+        https_version: str = "https://" + match.group(1)
+
+        stdout = RunGit(["remote", "set-url", "origin", https_version])
+        print("git remote address has been successfully converted from SSH to HTTPS type")
+    else:
+        PrintError("unknown conversion mode for address type, exit")
+
 def PrintHelp():
     print("sw - [BRANCH_NAME] switch to another branch in all repos")
     print("up - update current repo")
@@ -461,6 +498,8 @@ def PrintHelp():
     print("bk - backup modified files of current repo and checkout them")
     print("rb - completely remove build directory and build project again")
     print("sq - [COMMITS_COUNT] [COMMIT_MSG] squash commits")
+
+    print("ca - [hs|sh] convert git remote address from 'https' to 'ssh' and vice versa")
 
 # ----------------------------------------------------------------------------------------------------------------------
 # entry point
@@ -490,6 +529,8 @@ def main():
         FullRebuild()
     elif "sq" == sys.argv[1]:
         SquachCommits(sys.argv)
+    elif "ca" == sys.argv[1]:
+        ConvertAddressType(sys.argv)
     elif "hp" == sys.argv[1]:
         PrintHelp()
     else:
