@@ -5,6 +5,10 @@ import sys
 import os
 import re
 
+# ----------------------------------------------------------------------------------------------------------------------
+# GitHelper - making of various usefull things by just one short command ^_^
+# ----------------------------------------------------------------------------------------------------------------------
+
 PRINT_TAG: str = "workflow_utility"
 CLANG_FORMAT_CMD: str = "clang-format --style=file -i -Werror"
 SUBMODULE_LIBS: list = [
@@ -39,7 +43,7 @@ def PrintWarning(msg: str):
 def PrintError(msg: str):
     print(TerminalColors.FAIL + TerminalColors.BOLD + msg + TerminalColors.ENDC)
 
-def RunGit(git_flags: list, print_err_msg: bool = True) -> str :
+def RunGit(git_flags: list, print_err_msg: bool = True) -> str:
     proc_args: list = ["git"] + git_flags
     process: subprocess.Popen = subprocess.Popen(proc_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
@@ -250,13 +254,19 @@ def UpdateCurrentRepo():
             print(stdout)
 
 def PrintInfo():    
-    stdout = RunGit(["remote", "-v"])
+    stdout, success = RunGit(["remote", "-v"])
     if stdout != None:
         print(stdout)
-    stdout = RunGit(["branch", "--show-current"])
+    if not success:
+        return
+
+    stdout, success = RunGit(["branch", "--show-current"])
     if stdout != None:
         print(stdout)
-    stdout = RunGit(["log", "-n", "10", "--oneline", "--decorate=short"])
+    if not success:
+        return
+
+    stdout, success = RunGit(["log", "-n", "10", "--oneline", "--decorate=short"])
     if stdout != None:
         print(stdout)
 
@@ -363,7 +373,7 @@ def CommitChanges(args: list):
     if None == stdout:
         return
         
-    compiled_regexp = re.compile("^(TRAFFIC-[0-9]{1,5}).*")
+    compiled_regexp = re.compile("^(TRAFFIC-[0-9]{1,5}|TRAFFIC-#).*")
     match = compiled_regexp.match(stdout)
     commit_message: str
     if match != None:
@@ -371,7 +381,7 @@ def CommitChanges(args: list):
         for i in range(len(args) - 2):
             commit_message = commit_message + " " + args[i+2]
     else:
-        PrintError("'TRAFFIC-xxxxx' prefix is not found in branch name, exit")
+        PrintError("'TRAFFIC-xxxxx | -#' prefix is not found in branch name, exit")
         return
 
     # commit
@@ -387,6 +397,12 @@ def PrepareNewProject():
     # choose type (moses, router, attractor, etc...)
     # dir name
     # ask 'are you sure?'
+
+    # <download project>
+    # submodules: git submodule update --recursive --init
+    # install hooks for clang-format: launch python3 ./libraries/repo-tools/prepare_repo.py
+    # ./libraries/boost/dgis_make_boost.sh -tclang
+    # ./build.sh
 
 def BackupModifiedFiles():
     print("TODO: backup modified files")
@@ -416,7 +432,7 @@ def SquachCommits(args: list):
         return
     branch_name: str = stdout
         
-    compiled_regexp = re.compile("^(TRAFFIC-[0-9]{1,5}).*")
+    compiled_regexp = re.compile("^(TRAFFIC-[0-9]{1,5}|TRAFFIC-#).*")
     match = compiled_regexp.match(branch_name)
     if None == match:
         PrintError("'TRAFFIC-xxxxx' prefix is not found in branch name, exit")
@@ -451,7 +467,7 @@ def SquachCommits(args: list):
 
 def ConvertAddressType(args: list):
     if len(args) < 3:
-        PrintError("too few arguments for commits squashing")
+        PrintError("too few arguments for address conversion")
         return
     
     stdout = RunGit(["remote", "-v"])
@@ -487,15 +503,16 @@ def ConvertAddressType(args: list):
         PrintError("unknown conversion mode for address type, exit")
 
 def PrintHelp():
-    print("sw - [BRANCH_NAME] switch to another branch in all repos")
-    print("up - update current repo")
+    print("GitHelper - making of various usefull things by just one short command ^_^")
+    print("sw - [BRANCH_NAME] switch to another branch in all repos of project")
+    print("up - update current repo (update remote status, pull changes, refresh submodules)")
     print("if - print repo info")
     print("st - git status")
-    print("cf - run clang-format on modified files in current repo")
+    print("cf - run clang-format on all new/modified *.[ h | c | cpp | inl ] files in current repo")
 
-    print("ci - [MSG] commit formatted message")
+    print("ci - [MSG] commit formatted message with ticket number from branch name")
     print("np - [PRJ_NAME] [DIR_NAME] create fresh project")
-    print("bk - backup modified files of current repo and checkout them")
+    print("bk - backup modified files of current repo and checkout them (a-la stash)")
     print("rb - completely remove build directory and build project again")
     print("sq - [COMMITS_COUNT] [COMMIT_MSG] squash commits")
 
