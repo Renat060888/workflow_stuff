@@ -84,4 +84,6 @@
     apt install openresolv
     apt install wireguard
 
-
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash # under user
+    nvm install 21 # node & npm will be installed
+    npm install -g typescript # check by typing 'tsc'
