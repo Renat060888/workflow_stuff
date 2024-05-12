@@ -1,6 +1,7 @@
 
     sudo passwd root
 
+    apt install synaptic
     apt install mc
 
     gsettings set org.gnome.desktop.wm.keybindings switch-input-source "['<Shift>Alt_L']"
@@ -67,8 +68,9 @@
     
     apt install libfuse2 (for lens)
     
-    apt install golang
+    apt install golang-1.21
     apt install delve (debugger)
+    cd /usr/bin && ln -s /usr/lib/go-1.21/bin/go && ln -s /usr/lib/go-1.21/bin/gofmt
     
     apt install python3-pynput (workflow_utility.py)
     
@@ -89,3 +91,11 @@
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash # under user
     nvm install 21 # node & npm will be installed
     npm install -g typescript # check by typing 'tsc'
+
+    smb:
+    sudo apt-get install cifs-utils
+    /etc/fstab -> //server_ip/dir_name /pathto/mountpoint cifs username=...,password=...,rw,uid=1000,gid=500,vers=1.0    0    0
+    check: mount -a
+
+
+    
