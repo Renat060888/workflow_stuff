@@ -17,8 +17,10 @@
     
     apt install cmake
     
-    https://apt.llvm.org/llvm.sh
-    ./llvm_update_alternatives.sh 14 0
+    https://apt.llvm.org/llvm.sh 17
+    apt install clang-format-17
+    apt install clang-tidy-17
+    ./llvm_update_alternatives.sh 17 0
     
     for bug "ModuleNotFoundError: No module named 'lldb.embedded_interpreter'"
     mkdir -p /usr/lib/local/lib/python3.10 && cd /usr/lib/local/lib/python3.10 && ln -s /usr/lib/llvm-14/lib/python3.10/dist-packages dist-packages
