@@ -22,6 +22,15 @@
     apt install clang-format-17
     apt install clang-tidy-17
     ./llvm_update_alternatives.sh 17 0
+
+    gcc-13 install:
+    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+    sudo apt update
+    sudo apt install gcc-13 g++-13
+    update-alternatives --display gcc
+    sudo update-alternatives --remove-all gcc
+    sudo update-alternatives --remove-all g++
+    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10 --slave /usr/bin/g++ g++ /usr/bin/g++-13
     
     for bug "ModuleNotFoundError: No module named 'lldb.embedded_interpreter'"
     mkdir -p /usr/lib/local/lib/python3.10 && cd /usr/lib/local/lib/python3.10 && ln -s /usr/lib/llvm-14/lib/python3.10/dist-packages dist-packages
