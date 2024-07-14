@@ -17,10 +17,16 @@
     apt install htop
     
     apt install cmake
+
+    apt install postgresql
+    sudo -i -u postgres
+    createuser --interactive
+    alter user renat with password 'bla-bla';
     
     https://apt.llvm.org/llvm.sh 17
     apt install clang-format-17
     apt install clang-tidy-17
+    cd /usr/bin && ln -s /usr/bin/lldb-17 lldb
     ./llvm_update_alternatives.sh 17 0
 
     gcc-13 install:
@@ -40,7 +46,9 @@
     apt install libxcb-xinerama0
     launch WITHOUT INTERNET CONNECTION ./qt-creator-opensource-linux-x86_64-10.0.0.run
     + styles, settings
+    help -> about plugins -> clangCodeModel
     ! Preferences -> C++ -> Clangd -> Diagnostic configuraion -> Checks for questionable constructs (must be empty)
+    Preferences -> C++ -> Clang-Format -> full formatting
     
     apt install git
     (not root)
@@ -51,7 +59,7 @@
     git config --global core.editor "mcedit"
     
     apt install python3-pip
-    pip3 install conan==1.60.0 (via sudo for global)
+    pip3 install conan==1.64.0 (via sudo for global)
     (pip3 install --force-reinstall -v "conan==x.x.x")
     source ~/.profile
     + remotes, profiles
@@ -81,6 +89,7 @@
     apt install delve (debugger)
     cd /usr/bin && ln -s /usr/lib/go-1.21/bin/go && ln -s /usr/lib/go-1.21/bin/gofmt
     
+    
     apt install python3-pynput (workflow_utility.py)
     
     apt install gitk
@@ -105,6 +114,10 @@
     sudo apt-get install cifs-utils
     /etc/fstab -> //server_ip/dir_name /pathto/mountpoint cifs username=...,password=...,rw,uid=1000,gid=500,vers=1.0    0    0
     check: mount -a
+
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    chmod 700 get_helm.sh
+    ./get_helm.sh
 
 
     
