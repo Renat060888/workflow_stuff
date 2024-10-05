@@ -3,6 +3,8 @@
 
     apt install synaptic
     apt install mc
+    apt install htop
+    apt install terminator
 
     gsettings set org.gnome.desktop.wm.keybindings switch-input-source "['<Shift>Alt_L']"
     gsettings set org.gnome.desktop.wm.keybindings switch-input-source-backward "['<Alt>Shift_L']"
@@ -14,8 +16,7 @@
 
     VNC (built-in) settings -> sharing -> remote desktop ON -> remote desktop/remote control/legacy : all ON -> your own password
     
-    apt install htop
-    
+    apt install ninja-build
     apt install cmake
 
     apt install postgresql
@@ -49,22 +50,25 @@
     help -> about plugins -> clangCodeModel
     ! Preferences -> C++ -> Clangd -> Diagnostic configuraion -> Checks for questionable constructs (must be empty)
     Preferences -> C++ -> Clang-Format -> full formatting
+    put .clang-format file at root of project (near CMakeLists.txt)
     
     apt install git
     (not root)
     git config --global alias.st status
     git config --global alias.lg 'log --oneline -n 10'
+    git config --global alias.pf 'push --force'
+    git config --global alias.up 'remote update origin --prune'
+    git config --global alias.co 'checkout'
     git config --global user.name '...'
     git config --global user.email ...
     git config --global core.editor "mcedit"
+    apt install gitk
     
     apt install python3-pip
     pip3 install conan==1.64.0 (via sudo for global)
     (pip3 install --force-reinstall -v "conan==x.x.x")
     source ~/.profile
     + remotes, profiles
-    
-    apt install ninja-build
     
     apt install libcurl4-openssl-dev
     apt install curl
@@ -89,12 +93,7 @@
     apt install delve (debugger)
     cd /usr/bin && ln -s /usr/lib/go-1.21/bin/go && ln -s /usr/lib/go-1.21/bin/gofmt
     
-    
     apt install python3-pynput (workflow_utility.py)
-    
-    apt install gitk
-    
-    apt install terminator  
     
     // ? (for moses)
     apt install libfcgi-dev
@@ -118,6 +117,27 @@
     curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
     chmod 700 get_helm.sh
     ./get_helm.sh
+
+    mkdir 0-develop 1-sources 2-configs 3-docs 4-notes 5-________ 6-resources 7-artifacts 8-for_sort 9-temp
+    mkdir 9-temp/downloads
+
+
+
+    settings -> appearance -> dark	
+    settings -> privacy -> screen
+    settings -> privacy -> file history & trash -> file history OFF
+    settings -> keyboard -> input sources
+    settings -> accessibility -> enable animations (OFF)
+    settings -> multitasking -> workspaces on all displays
+
+    apps -> password and keys -> right click on "login" -> save empty pass
+    
+    other_locations -> smb://home_cloud -> login/pass
+    
+    install FreeFileSync
+	
+	
+
 
 
     
